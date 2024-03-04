@@ -1,3 +1,5 @@
+// const { render } = require("astro/dist/runtime/server");
+
 const playlistSongs = document.getElementById("playlist-songs");
 const playButton = document.getElementById("play");
 const pauseButton = document.getElementById("pause");
@@ -88,6 +90,44 @@ const allSongs = [
   },
 ];
 
+// songs to test automatically playing song
+// const allSongs = [
+//   {
+//     id: 0,
+//     title: "Hello World",
+//     artist: "Rafael",
+//     duration: "0:23",
+//     src: "https://s3.amazonaws.com/org.freecodecamp.mp3-player-project/hello-world.mp3",
+//   },
+//   {
+//     id: 1,
+//     title: "In the Zone",
+//     artist: "Rafael",
+//     duration: "0:11",
+//     src: "https://s3.amazonaws.com/org.freecodecamp.mp3-player-project/in-the-zone.mp3",
+//   },
+//   {
+//     id: 2,
+//     title: "Camper Cat",
+//     artist: "Rafael",
+//     duration: "0:21",
+//     src: "https://s3.amazonaws.com/org.freecodecamp.mp3-player-project/camper-cat.mp3",
+//   },
+//   {
+//     id: 3,
+//     title: "Electronic",
+//     artist: "Rafael",
+//     duration: "0:15",
+//     src: "https://s3.amazonaws.com/org.freecodecamp.mp3-player-project/electronic.mp3",
+//   },
+//   {
+//     id: 4,
+//     title: "Sailing Away",
+//     artist: "Rafael",
+//     duration: "0:22",
+//     src: "https://s3.amazonaws.com/org.freecodecamp.mp3-player-project/sailing-away.mp3",
+//   },
+// ];
 // all browsers support the Web Audio API
 const audio = new Audio()
 // userData contains songs, song playing, & time of current song
@@ -181,7 +221,24 @@ const deleteSong = (id) => {
     renderSongs(userData?.songs);
     highlightCurrentSong();
     setPlayButtonAccessibleText();
-}
+
+    if(userData?.songs.length == 0){
+      // createElement(): DOM method to dynamically create an element
+      const resetButton = document.createElement("button");
+      const resetText = document.createTextNode("Reset Playlist");
+      resetButton.id = "reset";
+      resetButton.ariaLabel = "Reset playlist";
+      resetButton.appendChild(resetText); //appendChild lets you add a node or element as the child of another element
+      playlistSongs.appendChild(resetButton);
+
+      resetButton.addEventListener("click", () => {
+        userData.songs = [...allSongs];
+        renderSongs(sortSongs());
+        setPlayButtonAccessibleText();
+        resetButton.remove();
+      });
+    }
+};
 
 const setPlayerDisplay = () =>{
     const playingSong = document.getElementById("player-song-title");
@@ -268,6 +325,23 @@ nextButton.addEventListener("click", playNextSong);
 previousButton.addEventListener("click", playPreviousSong);
 shuffleButton.addEventListener("click", shuffle);
 
+audio.addEventListener("ended", () => { //automatically plays song when current song is ending
+  const currentSongIndex = getCurrentSongIndex();
+  const nextSongExists = userData?.songs[currentSongIndex + 1] !== undefined;
+
+  if(nextSongExists){
+    playNextSong();
+  } else{
+    userData.currentSong = null;
+    userData.songCurrentTime = 0;
+
+    pauseSong();
+    setPlayerDisplay();
+    highlightCurrentSong();
+    setPlayButtonAccessibleText();
+  }
+});
+
 const sortSongs = () => {
   userData?.songs.sort((a,b) => {
     if (a.title < b.title) {
@@ -284,4 +358,5 @@ const sortSongs = () => {
   return userData?.songs;
 };
 
-renderSongs(userData?.songs);
+renderSongs(sortSongs());
+setPlayButtonAccessibleText();
